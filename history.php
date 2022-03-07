@@ -9,16 +9,15 @@
     <link rel="stylesheet" href="assets/styles/style.css">
     <link rel="stylesheet" href="assets/styles/stock.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
 
     <?php session_start();
     if ($_SESSION) {
-        $conn = mysqli_connect('localhost', '6212231004', '1004', '6212231004');
-        if (!$conn) die("Connect failed " . mysqli_connect_error());
+        include('./api/dbconnect.php');
 
         $id = $_SESSION['id'];
         $sql = "SELECT * FROM user WHERE id=$id ";
-        $arr = mysqli_query($conn, $sql);
+        $arr = mysqli_query($dbcon, $sql);
 
         function redirect()
         {
@@ -72,13 +71,15 @@
         <li><a href="index.php"><i class="fas fa-shopping-cart"></i> &nbsp;หน้าขาย</a></li>
         <li><a href="stock.php"><i class="fas fa-box"></i> &nbsp;สต๊อกสินค้า</a></li>
         <li><a href="category.php"><i class="fas fa-folders"></i> &nbsp;หมวดหมู่สินค้า</a></li>
-        <li><a href="arrears.php"><i class="fas fa-comment-dollar"></i> &nbsp;ค้างจ่าย</a></li>
         <li class="active"><a href="history.php"><i class="fas fa-history"></i> &nbsp;ประวัติการขาย</a></li>
         <li><a href="howto.php"><i class="fas fa-book"></i> &nbsp;คู่มือ</a></li>
     </ul>
 
     <div id="app">
         <div class="table-product">
+            <strong>ค้นหาด้วยวันที่</strong> &nbsp;&nbsp;&nbsp;
+            <input type="date" @change="findDate">
+            <br><br>
             <table style="width: 100%; table-layout: fixed; overflow-wrap: break-word;">
                 <tr>
                     <th>วันที่</th>
@@ -86,8 +87,7 @@
                     <th>ราคาสินค้า</th>
                     <th>จำนวนเงินที่จ่าย</th>
                 </tr>
-                <tr v-for="history in histories" v-on:click="selectHistory(history.id)"
-                :style="{background: historyActive == history.id ? '#2c73d1' : null, color: historyActive == history.id ? 'white' : null}">
+                <tr v-for="history in histories" v-on:click="selectHistory(history.id)" :style="{background: historyActive == history.id ? '#2c73d1' : null, color: historyActive == history.id ? 'white' : null}">
                     <td>{{history.time.split(' ')[0]}}</td>
                     <td>{{getTime(history.time.split(' '))}}</td>
                     <td>{{parseFloat(history.totalPrice).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}}</td>
@@ -102,6 +102,7 @@
                 <h2>รายละเอียดคำสั่งซื้อ</h2>
                 <span>ราคารวมสินค้า &nbsp;&nbsp;<strong>{{detail.totalPrice}}</strong> บาท</span> <br><br>
                 <span>จำนวนเงินที่ชำระ &nbsp;&nbsp;<strong>{{detail.paid}}</strong> บาท</span> <br><br>
+                <span>ชื่อผู้ซื้อ &nbsp;&nbsp;<strong>{{detail.user}}</strong></span> <br><br>
                 <div v-for="product in detail.products">
                     {{product.name}} x {{product.count}}
                 </div> <br><br>
@@ -141,12 +142,22 @@
                     products: []
                 },
                 histories: [],
-                historyActive: ""
+                sHistories: [],
+                historyActive: "",
+                // findDate: ""
             },
             mounted() {
                 this.getHistory();
             },
             methods: {
+                findDate(e) {
+                    const findDate = e.target.value;
+                    if(findDate == ''){
+                        this.histories = this.sHistories;
+                        return;    
+                    }
+                    this.histories = this.sHistories.filter(e => e.time.split(' ')[0] === findDate);
+                },
                 toastrSuccess(text) {
                     Toastify({
                         text,
@@ -164,13 +175,12 @@
                 getTime(t) {
                     let time = t[1].split(':');
                     let type = t[2];
-                    time[0] = (parseInt(time[0]) + 6) % 24;
-                    return time.join(':');
+                    // time[0] = (parseInt(time[0]) + 6) % 24;
+                    return time.join(':') + ' ' + type;
                 },
                 selectHistory(id) {
                     this.detail = this.histories.find(e => e.id == id);
                     this.historyActive = id;
-                    console.log(this.detail);
                 },
                 // ดึงข้อมูลมาแสดงในตาราง
                 getHistory() {
@@ -188,8 +198,8 @@
                         res.pop();
 
                         res.map(e => e.products = JSON.parse(e.products));
-                        console.log(res);
                         this.histories = res;
+                        this.sHistories = res;
                     })
                 },
                 deleteHistory() {

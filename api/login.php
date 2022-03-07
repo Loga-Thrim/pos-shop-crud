@@ -1,13 +1,13 @@
 <?php
+
+include('./dbconnect.php');
+
 $email = $_POST['email'];
 $password = $_POST['password'];
 
-$conn = mysqli_connect('localhost', '6212231004', '1004', '6212231004');
-if (!$conn) die("Connect failed " . mysqli_connect_error());
-
 $password = md5($password);
 $sql = "SELECT * FROM user WHERE email='$email' AND password='$password'";
-$arr = mysqli_query($conn, $sql);
+$arr = mysqli_query($dbcon, $sql);
 
 function redirect() {
     echo "<script>";

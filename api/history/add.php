@@ -7,6 +7,8 @@
     $count = json_decode($_POST['count'], true);
     $totalPrice = $_POST['totalPrice'];
     $paid = $_POST['paid'];
+    $user = $_POST['user'];
+    $email = $_POST['email'];
     $success = 1;
 
     for($i = 0; $i < count($id); ++$i){
@@ -22,9 +24,9 @@
 
     $t = time();
     $t = date("Y-m-d h:i:s A", $t);
-    $sql = "INSERT INTO history (totalPrice, paid, products, time) VALUES ('$totalPrice', '$paid', '$data', '$t')";
+    $sql = "INSERT INTO history (totalPrice, paid, products, time, user, email) VALUES ('$totalPrice', '$paid', '$data', '$t', '$user', '$email')";
     
 
-    if($success && mysqli_query($dbcon, $sql)) echo 'success';
+    if($success && mysqli_query($dbcon, $sql)) echo mysqli_insert_id($dbcon);
     else echo 'error';
 ?>

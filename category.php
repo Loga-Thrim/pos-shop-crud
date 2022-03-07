@@ -13,12 +13,11 @@
 
     <?php session_start();
     if ($_SESSION) {
-        $conn = mysqli_connect('localhost', '6212231004', '1004', '6212231004');
-        if (!$conn) die("Connect failed " . mysqli_connect_error());
+        include('./api/dbconnect.php');
 
         $id = $_SESSION['id'];
         $sql = "SELECT * FROM user WHERE id=$id ";
-        $arr = mysqli_query($conn, $sql);
+        $arr = mysqli_query($dbcon, $sql);
 
         function redirect()
         {
@@ -72,7 +71,6 @@
         <li><a href="index.php"><i class="fas fa-shopping-cart"></i> &nbsp;หน้าขาย</a></li>
         <li><a href="stock.php"><i class="fas fa-box"></i> &nbsp;สต๊อกสินค้า</a></li>
         <li class="active"><a href="category.php"><i class="fas fa-folders"></i> &nbsp;หมวดหมู่สินค้า</a></li>
-        <li><a href="arrears.php"><i class="fas fa-comment-dollar"></i> &nbsp;ค้างจ่าย</a></li>
         <li><a href="history.php"><i class="fas fa-history"></i> &nbsp;ประวัติการขาย</a></li>
         <li><a href="howto.php"><i class="fas fa-book"></i> &nbsp;คู่มือ</a></li>
     </ul>
@@ -216,7 +214,7 @@
                     }).then(res => {
                         console.log(res.data);
                         if (res.data === 'success') {
-                            this.getProduct();
+                            this.getCategory();
                             this.toastrSuccess("แก้ไขข้อมูลสำเร็จ");
                         }
                     })

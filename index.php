@@ -11,12 +11,11 @@
 
     <?php session_start();
     if ($_SESSION) {
-        $conn = mysqli_connect('localhost', '6212231004', '1004', '6212231004');
-        if (!$conn) die("Connect failed " . mysqli_connect_error());
+        include('./api/dbconnect.php');
 
         $id = $_SESSION['id'];
         $sql = "SELECT * FROM user WHERE id=$id ";
-        $arr = mysqli_query($conn, $sql);
+        $arr = mysqli_query($dbcon, $sql);
 
         function redirect()
         {
@@ -70,7 +69,6 @@
         <li class="active"><a href="index.php"><i class="fas fa-shopping-cart"></i> &nbsp;หน้าขาย</a></li>
         <li><a href="stock.php"><i class="fas fa-box"></i> &nbsp;สต๊อกสินค้า</a></li>
         <li><a href="category.php"><i class="fas fa-folders"></i> &nbsp;หมวดหมู่สินค้า</a></li>
-        <li><a href="arrears.php"><i class="fas fa-comment-dollar"></i> &nbsp;ค้างจ่าย</a></li>
         <li><a href="history.php"><i class="fas fa-history"></i> &nbsp;ประวัติการขาย</a></li>
         <li><a href="howto.php"><i class="fas fa-book"></i> &nbsp;คู่มือ</a></li>
     </ul>
@@ -227,22 +225,26 @@
 
                 submitSearch() {
                     axios(`api/product/search.php?text=${this.textSearch}&category=${this.categorySearch}`).then(res => {
-                        res = res.data.split('\n');
-                        res = res.map(e => {
-                            e = e.slice(e.indexOf(')') + 3)
-                            e = e.slice(0, e.length - 1)
-                            try {
-                                return JSON.parse(e);
-                            } catch (e) {
-                                return {};
-                            }
-                        });
-                        res.pop();
+                        try {
+                            res = res.data.split('\n');
+                            res = res.map(e => {
+                                e = e.slice(e.indexOf(')') + 3)
+                                e = e.slice(0, e.length - 1)
+                                try {
+                                    return JSON.parse(e);
+                                } catch (e) {
+                                    return {};
+                                }
+                            });
+                            res.pop();
 
-                        this.products = res.map(e => ({
-                            ...e,
-                            count: 0
-                        }));
+                            this.products = res.map(e => ({
+                                ...e,
+                                count: 0
+                            }));
+                        } catch (e) {
+                            this.products = [];
+                        }
                         this.totalPrice = 0
                     })
                 },
@@ -251,6 +253,8 @@
                     this.products.map(e => e.count = 0)
                 },
                 openPayModal() {
+                    const user = '<?php if($_SESSION) echo $_SESSION['name']; else echo "" ?>';
+                    if(!user) window.location.href = 'login.php';
                     this.modalPay = true
                     setTimeout(() => this.$refs.paid.focus(), 200)
                 },
@@ -275,16 +279,20 @@
                         formData.append('data', JSON.stringify(this.products.filter(e => e.count > 0)));
                         formData.append('totalPrice', totalPrice);
                         formData.append('paid', paid);
+                        formData.append('user', '<?php if($_SESSION) echo $_SESSION['name']; else echo ""; ?>');
+                        formData.append('email', '<?php if($_SESSION) echo $_SESSION['email']; else echo ""; ?>');
 
                         axios({
                             method: "POST",
                             url: 'api/history/add.php',
                             data: formData
                         }).then(res => {
-                            if (res.data === 'success') {
+                            if (res.data !== 'error') {
                                 Swal.fire({
                                     icon: 'success',
                                     title: `เงินทอน ${parseFloat(paid - totalPrice).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')} บาท`
+                                }).then(()=>{
+                                    window.open(`bill.php?${res.data}`)
                                 })
                                 this.products.map(e => e.count = 0)
                                 this.modalPay = false
